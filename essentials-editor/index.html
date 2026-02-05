@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KitCore Essentials Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #09090b;
+            --bg-secondary: #18181b;
+            --bg-tertiary: #27272a;
+            --bg-hover: #3f3f46;
+            --border: #27272a;
+            --border-hover: #3f3f46;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #8b5cf6;
+            --accent-hover: #a78bfa;
+            --accent-muted: rgba(139, 92, 246, 0.15);
+            --success: #22c55e;
+            --success-muted: rgba(34, 197, 94, 0.15);
+            --danger: #ef4444;
+            --danger-muted: rgba(239, 68, 68, 0.15);
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --sidebar-width: 280px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Minecraft Colors */
+        .mc-0 { color: #000000; } .mc-1 { color: #0000AA; } .mc-2 { color: #00AA00; } .mc-3 { color: #00AAAA; }
+        .mc-4 { color: #AA0000; } .mc-5 { color: #AA00AA; } .mc-6 { color: #FFAA00; } .mc-7 { color: #AAAAAA; }
+        .mc-8 { color: #555555; } .mc-9 { color: #5555FF; } .mc-a { color: #55FF55; } .mc-b { color: #55FFFF; }
+        .mc-c { color: #FF5555; } .mc-d { color: #FF55FF; } .mc-e { color: #FFFF55; } .mc-f { color: #FFFFFF; }
+        .mc-l { font-weight: bold; } .mc-o { font-style: italic; } .mc-n { text-decoration: underline; }
+        .mc-m { text-decoration: line-through; }
+
+        /* Layout */
+        .app { display: flex; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.2s ease;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed { width: 60px; }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 64px;
+        }
+
+        .sidebar-logo {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--accent), #c084fc);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+
+        .sidebar-title { font-size: 14px; font-weight: 700; white-space: nowrap; }
+
+        .sidebar.collapsed .sidebar-title,
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .nav-item span:not(.nav-item-icon),
+        .sidebar.collapsed .section-header span,
+        .sidebar.collapsed .section-item-name,
+        .sidebar.collapsed .nav-item-count { display: none; }
+
+        .sidebar-toggle {
+            margin-left: auto; background: none; border: none;
+            color: var(--text-secondary); cursor: pointer;
+            padding: 8px; border-radius: 6px;
+        }
+        .sidebar-toggle:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .sidebar.collapsed .sidebar-toggle { margin: 0 auto; }
+
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 12px; }
+        .sidebar-content::-webkit-scrollbar { width: 4px; }
+        .sidebar-content::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 2px; }
+
+        .nav-section { margin-bottom: 16px; }
+        .nav-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px 4px; }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 8px; cursor: pointer;
+            transition: all 0.15s; font-size: 13px; color: var(--text-secondary); white-space: nowrap;
+        }
+        .nav-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .nav-item.active { background: var(--accent-muted); color: var(--accent); }
+        .nav-item-icon { width: 20px; text-align: center; flex-shrink: 0; }
+        .nav-item-count { margin-left: auto; background: var(--bg-tertiary); padding: 2px 8px; border-radius: 10px; font-size: 11px; color: var(--text-muted); }
+
+        .sections-nav { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px; }
+        .section-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; }
+        .section-header span { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-add-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 16px; padding: 4px; border-radius: 4px; line-height: 1; }
+        .section-add-btn:hover { background: var(--accent-muted); }
+
+        .section-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 8px; cursor: pointer;
+            transition: all 0.15s; font-size: 13px; color: var(--text-secondary);
+        }
+        .section-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .section-item.active { background: var(--accent-muted); color: var(--accent); }
+        .section-item-icon { font-size: 16px; flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+        .section-item-icon img { width: 18px; height: 18px; image-rendering: pixelated; }
+        .section-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Main Content */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        .topbar {
+            padding: 12px 24px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 16px; background: var(--bg-secondary);
+        }
+        .topbar-title { font-size: 18px; font-weight: 700; }
+        .topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+
+        .content { flex: 1; overflow-y: auto; padding: 24px; }
+        .content::-webkit-scrollbar { width: 8px; }
+        .content::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border: 1px solid transparent; border-radius: 8px;
+            font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: all 0.15s; font-family: inherit; white-space: nowrap;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #16a34a; }
+        .btn-ghost { background: transparent; color: var(--text-secondary); border-color: var(--border); }
+        .btn-ghost:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .btn-danger { background: var(--danger-muted); color: var(--danger); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; }
+
+        /* Input */
+        .input {
+            background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 14px; color: var(--text-primary); font-size: 13px;
+            font-family: inherit; transition: all 0.15s;
+        }
+        .input:focus { outline: none; border-color: var(--accent); }
+        .input-sm { padding: 8px 12px; font-size: 12px; }
+
+        /* Panels */
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* Section Config */
+        .section-config {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; margin-bottom: 24px;
+        }
+        .section-config-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .section-config-title { font-size: 16px; font-weight: 600; }
+        .section-config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+
+        .field-group { display: flex; flex-direction: column; gap: 6px; }
+        .field-group label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Search Bar */
+        .search-bar {
+            display: flex; gap: 12px; align-items: center;
+            margin-bottom: 16px; padding: 12px 16px;
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px;
+        }
+        .search-bar input { flex: 1; background: transparent; border: none; color: var(--text-primary); font-size: 14px; }
+        .search-bar input:focus { outline: none; }
+        .search-bar input::placeholder { color: var(--text-muted); }
+        .search-icon { color: var(--text-muted); }
+
+        /* Items Grid */
+        .items-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .items-header h3 { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+
+        .items-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px;
+        }
+
+        .item-card {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px; cursor: grab; transition: all 0.15s;
+            display: flex; align-items: center; gap: 10px; user-select: none;
+        }
+        .item-card:hover { border-color: var(--accent); background: var(--accent-muted); }
+        .item-card.dragging { opacity: 0.5; cursor: grabbing; }
+        .item-card.drag-over { border-color: var(--success); background: var(--success-muted); transform: scale(1.02); }
+        .item-card.hidden { display: none; }
+        .item-card .drag-handle { color: var(--text-muted); cursor: grab; font-size: 12px; }
+
+        .item-card-icon {
+            width: 36px; height: 36px; background: var(--bg-tertiary); border-radius: 6px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            overflow: hidden;
+        }
+        .item-card-icon img { width: 32px; height: 32px; image-rendering: pixelated; }
+        .item-card-icon .emoji { font-size: 18px; }
+
+        .item-card-info { flex: 1; min-width: 0; }
+        .item-card-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-card-material { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .item-card-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+
+        .badge { padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+        .badge-amount { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .badge-enchant { background: var(--accent-muted); color: var(--accent); }
+        .badge-potion { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .badge-named { background: var(--success-muted); color: var(--success); }
+        .badge-slot { background: var(--bg-tertiary); color: var(--text-muted); }
+
+        .item-card-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
+        .item-card:hover .item-card-actions { opacity: 1; }
+
+        .add-item-card {
+            background: transparent; border: 2px dashed var(--border); border-radius: 10px;
+            padding: 20px; cursor: pointer; transition: all 0.15s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 6px; min-height: 80px; color: var(--text-muted);
+        }
+        .add-item-card:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-muted); }
+
+        /* Slot Visualizer */
+        .slot-visualizer {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; margin-bottom: 24px;
+        }
+        .slot-visualizer h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .slot-visualizer-info { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+        .slot-grid {
+            display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px;
+            background: #1a1a1a; padding: 8px; border-radius: 8px; max-width: 400px;
+        }
+        .slot {
+            aspect-ratio: 1; background: #373737; border: 2px solid #1f1f1f;
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            font-size: 10px; color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+            position: relative;
+        }
+        .slot:hover { border-color: var(--accent); background: #444; }
+        .slot.occupied { border-color: var(--accent); background: var(--accent-muted); }
+        .slot.current { border-color: var(--success); background: var(--success-muted); }
+        .slot img { width: 28px; height: 28px; image-rendering: pixelated; }
+        .slot .slot-number { position: absolute; bottom: 1px; right: 2px; font-size: 8px; color: #666; }
+        .slot .slot-amount { position: absolute; bottom: 1px; right: 2px; font-size: 9px; color: #fff; text-shadow: 1px 1px 0 #000; font-weight: bold; }
+
+        /* Section Slot Visualizer */
+        .section-slot-visualizer {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; margin-bottom: 24px;
+        }
+        .section-slot-visualizer h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .section-slot-grid {
+            display: grid; grid-template-columns: repeat(9, 40px); gap: 4px;
+            background: #1a1a1a; padding: 8px; border-radius: 8px; width: fit-content;
+        }
+        .section-slot {
+            width: 40px; height: 40px; background: #373737; border: 2px solid #1f1f1f;
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.15s; position: relative;
+        }
+        .section-slot:hover { border-color: var(--accent); background: #444; }
+        .section-slot.occupied { border-color: var(--accent); background: rgba(139, 92, 246, 0.25); }
+        .section-slot.selected { border-color: var(--success); background: var(--success-muted); box-shadow: 0 0 8px var(--success); }
+        .section-slot img { width: 28px; height: 28px; image-rendering: pixelated; }
+        .section-slot .slot-number { position: absolute; bottom: 1px; right: 2px; font-size: 8px; color: #555; }
+        .section-slot .slot-amount { position: absolute; bottom: 0px; right: 2px; font-size: 10px; color: #fff; text-shadow: 1px 1px 0 #000; font-weight: bold; }
+        .section-slot-empty { color: #555; font-size: 10px; }
+
+        /* Color Preview */
+        .color-preview {
+            background: #1a1a1a; border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px 16px; margin-top: 8px; min-height: 40px;
+            font-family: 'JetBrains Mono', monospace; font-size: 14px;
+            display: flex; align-items: center;
+        }
+        .color-preview:empty::before { content: 'Preview will appear here...'; color: var(--text-muted); font-style: italic; }
+
+        /* Color Reference */
+        .color-reference {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; margin-bottom: 24px;
+        }
+        .color-reference h4 { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-bottom: 16px; }
+        .color-item {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+            background: var(--bg-primary); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        }
+        .color-swatch { width: 20px; height: 20px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        .format-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+        .format-item { padding: 6px 12px; background: var(--bg-primary); border-radius: 6px; font-size: 12px; }
+
+        /* Material Browser */
+        .material-browser { display: grid; grid-template-columns: 220px 1fr; gap: 24px; height: calc(100vh - 140px); }
+
+        .material-categories {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
+            padding: 12px; overflow-y: auto;
+        }
+        .material-categories::-webkit-scrollbar { width: 4px; }
+        .material-categories::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 2px; }
+
+        .category-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 8px; cursor: pointer;
+            transition: all 0.15s; font-size: 13px; color: var(--text-secondary);
+        }
+        .category-item:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .category-item.active { background: var(--accent-muted); color: var(--accent); }
+
+        .material-list {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; overflow-y: auto;
+        }
+        .material-list-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .material-search { flex: 1; }
+        .material-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+
+        .material-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px; background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: 8px; cursor: pointer; transition: all 0.15s;
+        }
+        .material-item:hover { border-color: var(--accent); background: var(--accent-muted); }
+        .material-item-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+        .material-item-icon img { width: 24px; height: 24px; image-rendering: pixelated; }
+        .material-item-name { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Home Grid */
+        .home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .home-card {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; cursor: pointer; transition: all 0.2s;
+        }
+        .home-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .home-card-icon {
+            width: 48px; height: 48px; background: var(--accent-muted); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;
+        }
+        .home-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .home-card p { font-size: 13px; color: var(--text-muted); }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: flex-start;
+            padding: 40px 20px; z-index: 100; overflow-y: auto;
+        }
+        .modal-backdrop.active { display: flex; }
+        .modal {
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px;
+            width: 100%; max-width: 700px; animation: modalIn 0.2s ease;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { font-size: 18px; font-weight: 700; }
+        .modal-body { padding: 24px; max-height: 60vh; overflow-y: auto; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+        /* Editor Sections */
+        .editor-section {
+            background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px;
+            padding: 16px; margin-bottom: 16px;
+        }
+        .editor-section:last-child { margin-bottom: 0; }
+        .editor-section h4 {
+            font-size: 12px; font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .editor-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        .editor-row:last-child { margin-bottom: 0; }
+        .editor-field { flex: 1; }
+        .editor-field.small { flex: 0 0 100px; }
+        .editor-field label { display: block; font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+        .editor-field .input { width: 100%; }
+        .editor-field textarea {
+            width: 100%; min-height: 80px; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 14px; color: var(--text-primary);
+            font-size: 13px; font-family: 'JetBrains Mono', monospace; resize: vertical;
+        }
+        .editor-field textarea:focus { outline: none; border-color: var(--accent); }
+
+        .enchant-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .enchant-item { display: flex; gap: 8px; align-items: center; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 16px; }
+        .checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .checkbox input { width: 18px; height: 18px; accent-color: var(--accent); }
+        .checkbox span { font-size: 13px; color: var(--text-secondary); }
+
+        .source-code {
+            background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px;
+            padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            line-height: 1.7; color: #a5b4fc; overflow: auto; white-space: pre; max-height: 450px;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border); border-radius: 12px; padding: 48px 24px;
+            text-align: center; cursor: pointer; transition: all 0.2s;
+        }
+        .upload-zone:hover { border-color: var(--accent); background: var(--accent-muted); }
+        .upload-zone-icon { font-size: 48px; margin-bottom: 16px; }
+
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 10px;
+            font-size: 14px; font-weight: 500; animation: toastIn 0.3s ease; z-index: 200;
+        }
+        .toast.success { background: var(--success); color: white; }
+        .toast.error { background: var(--danger); color: white; }
+        @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .empty-state { text-align: center; padding: 60px 24px; }
+        .empty-state-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
+        .empty-state p { color: var(--text-muted); margin-bottom: 20px; }
+
+        .view-toggle { display: flex; gap: 4px; margin-left: auto; }
+        .view-toggle button { padding: 6px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); color: var(--text-secondary); border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .view-toggle button.active { background: var(--accent-muted); border-color: var(--accent); color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">⚔️</div>
+                <div class="sidebar-title">KitCore</div>
+                <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+            </div>
+            <div class="sidebar-content">
+                <nav class="nav-section">
+                    <div class="nav-label">Navigation</div>
+                    <div class="nav-item active" onclick="showPanel('home')" data-panel="home">
+                        <span class="nav-item-icon">🏠</span>
+                        <span>Home</span>
+                    </div>
+                    <div class="nav-item" onclick="showPanel('materials')" data-panel="materials">
+                        <span class="nav-item-icon">📦</span>
+                        <span>Material Browser</span>
+                    </div>
+                    <div class="nav-item" onclick="showPanel('slots')" data-panel="slots">
+                        <span class="nav-item-icon">🎯</span>
+                        <span>Menu Slots</span>
+                    </div>
+                    <div class="nav-item" onclick="showPanel('colors')" data-panel="colors">
+                        <span class="nav-item-icon">🎨</span>
+                        <span>Color Codes</span>
+                    </div>
+                </nav>
+                <div class="sections-nav">
+                    <div class="section-header">
+                        <span>Your Sections</span>
+                        <button class="section-add-btn" onclick="showModal('addSectionModal')">+</button>
+                    </div>
+                    <div id="sectionsList"></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="topbar">
+                <div class="topbar-title" id="topbarTitle">Home</div>
+                <div class="topbar-actions">
+                    <button class="btn btn-ghost" onclick="showModal('uploadModal')">📁 Upload</button>
+                    <button class="btn btn-ghost" onclick="showSourceModal()">📄 Source</button>
+                    <button class="btn btn-success" onclick="saveConfig()">💾 Save</button>
+                </div>
+            </div>
+
+            <div class="content">
+                <!-- Home Panel -->
+                <div class="panel active" id="panel-home">
+                    <div class="field-group" style="max-width: 400px; margin-bottom: 24px;">
+                        <label>Main Menu Title</label>
+                        <input type="text" class="input" id="menuTitle" placeholder="&8Essentials" oninput="updateMenuTitlePreview()">
+                        <div class="color-preview" id="menuTitlePreview"></div>
+                    </div>
+                    <h3 style="margin-bottom: 16px; font-size: 14px; color: var(--text-secondary);">Quick Actions</h3>
+                    <div class="home-grid">
+                        <div class="home-card" onclick="showModal('addSectionModal')">
+                            <div class="home-card-icon">➕</div>
+                            <h3>Add Section</h3>
+                            <p>Create a new section for your essentials menu</p>
+                        </div>
+                        <div class="home-card" onclick="showPanel('materials')">
+                            <div class="home-card-icon">📦</div>
+                            <h3>Browse Materials</h3>
+                            <p>Explore all Minecraft items by category</p>
+                        </div>
+                        <div class="home-card" onclick="showPanel('slots')">
+                            <div class="home-card-icon">🎯</div>
+                            <h3>Menu Slots</h3>
+                            <p>Visual chest layout for main menu</p>
+                        </div>
+                        <div class="home-card" onclick="showPanel('colors')">
+                            <div class="home-card-icon">🎨</div>
+                            <h3>Color Codes</h3>
+                            <p>Minecraft formatting reference</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Color Codes Panel -->
+                <div class="panel" id="panel-colors">
+                    <div class="color-reference">
+                        <h4>🎨 Minecraft Color Codes</h4>
+                        <p style="color: var(--text-muted); margin-bottom: 16px;">Use these codes with & prefix (e.g., &a for green, &l for bold)</p>
+                        <div class="color-grid">
+                            <div class="color-item"><div class="color-swatch" style="background: #000000;"></div>&0 Black</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #0000AA;"></div>&1 Dark Blue</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #00AA00;"></div>&2 Dark Green</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #00AAAA;"></div>&3 Dark Aqua</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #AA0000;"></div>&4 Dark Red</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #AA00AA;"></div>&5 Dark Purple</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #FFAA00;"></div>&6 Gold</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #AAAAAA;"></div>&7 Gray</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #555555;"></div>&8 Dark Gray</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #5555FF;"></div>&9 Blue</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #55FF55;"></div>&a Green</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #55FFFF;"></div>&b Aqua</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #FF5555;"></div>&c Red</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #FF55FF;"></div>&d Light Purple</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #FFFF55;"></div>&e Yellow</div>
+                            <div class="color-item"><div class="color-swatch" style="background: #FFFFFF;"></div>&f White</div>
+                        </div>
+                        <h4 style="margin-top: 24px; margin-bottom: 12px;">✨ Formatting Codes</h4>
+                        <div class="format-grid">
+                            <div class="format-item"><strong>&l</strong> Bold</div>
+                            <div class="format-item"><em>&o</em> Italic</div>
+                            <div class="format-item"><u>&n</u> Underline</div>
+                            <div class="format-item"><s>&m</s> Strikethrough</div>
+                            <div class="format-item">&k Obfuscated</div>
+                            <div class="format-item">&r Reset</div>
+                        </div>
+                        <h4 style="margin-top: 24px; margin-bottom: 12px;">📝 Examples</h4>
+                        <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+                            <div style="margin-bottom: 8px;"><code>&6&lGold Bold</code> → <span class="mc-6 mc-l">Gold Bold</span></div>
+                            <div style="margin-bottom: 8px;"><code>&a&lSuccess!</code> → <span class="mc-a mc-l">Success!</span></div>
+                            <div style="margin-bottom: 8px;"><code>&c&lDanger</code> → <span class="mc-c mc-l">Danger</span></div>
+                            <div style="margin-bottom: 8px;"><code>&b&oMagical</code> → <span class="mc-b mc-o">Magical</span></div>
+                            <div style="margin-bottom: 8px;"><code>&5&lEpic &d&oWeapon</code> → <span class="mc-5 mc-l">Epic </span><span class="mc-d mc-o">Weapon</span></div>
+                            <div><code>&7Click to &a&lconfirm</code> → <span class="mc-7">Click to </span><span class="mc-a mc-l">confirm</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Material Browser Panel -->
+                <div class="panel" id="panel-materials">
+                    <div class="material-browser">
+                        <div class="material-categories" id="materialCategories"></div>
+                        <div class="material-list">
+                            <div class="material-list-header">
+                                <input type="text" class="input material-search" id="materialSearch" placeholder="Search materials..." oninput="filterMaterials()">
+                            </div>
+                            <div class="material-grid" id="materialGrid"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slot Visualizer Panel -->
+                <div class="panel" id="panel-slots">
+                    <div class="slot-visualizer">
+                        <h4>📦 Main Menu Chest Layout (54 slots)</h4>
+                        <p class="slot-visualizer-info">Click a slot to assign the selected section to it. Sections appear as icons in the main menu.</p>
+                        <div class="slot-grid" id="slotGrid"></div>
+                    </div>
+                    <div style="margin-top: 16px;">
+                        <h4 style="font-size: 14px; margin-bottom: 12px;">Section Slot Assignments</h4>
+                        <div id="slotAssignments"></div>
+                    </div>
+                </div>
+
+                <!-- Section Editor Panel -->
+                <div class="panel" id="panel-section">
+                    <div id="sectionContent"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-backdrop" id="addSectionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Add New Section</h2>
+                <button class="btn btn-icon btn-ghost" onclick="hideModal('addSectionModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="field-group">
+                    <label>Section Key</label>
+                    <input type="text" class="input" id="newSectionKey" placeholder="e.g., weapons, armor, tools">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="hideModal('addSectionModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addSection()">Add Section</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="uploadModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Upload YAML</h2>
+                <button class="btn btn-icon btn-ghost" onclick="hideModal('uploadModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-zone-icon">📤</div>
+                    <h4>Drop your YAML file here</h4>
+                    <p style="color: var(--text-muted);">or click to browse</p>
+                </div>
+                <input type="file" id="fileInput" accept=".yml,.yaml" style="display: none;" onchange="handleFileUpload(event)">
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="sourceModal">
+        <div class="modal" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>YAML Source</h2>
+                <button class="btn btn-icon btn-ghost" onclick="hideModal('sourceModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <pre class="source-code" id="sourceCode"></pre>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="hideModal('sourceModal')">Close</button>
+                <button class="btn btn-primary" onclick="copySource()">📋 Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="itemModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 id="itemModalTitle">Edit Item</h2>
+                <button class="btn btn-icon btn-ghost" onclick="hideModal('itemModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="editor-section">
+                    <h4>📦 Basic Info</h4>
+                    <div class="editor-row">
+                        <div class="editor-field">
+                            <label>Material</label>
+                            <select class="input" id="itemMaterial" onchange="onMaterialChange()"></select>
+                        </div>
+                        <div class="editor-field small">
+                            <label>Amount</label>
+                            <input type="number" class="input" id="itemAmount" min="1" max="64" value="1">
+                        </div>
+                        <div class="editor-field small">
+                            <label>Slot</label>
+                            <input type="number" class="input" id="itemSlot" min="0" max="53" placeholder="Auto">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-section">
+                    <h4>🏷️ Display</h4>
+                    <div class="editor-field">
+                        <label>Custom Name</label>
+                        <input type="text" class="input" id="itemName" placeholder="&6&lLegendary Sword" oninput="updateNamePreview()">
+                        <div class="color-preview" id="itemNamePreview"></div>
+                    </div>
+                </div>
+
+                <div class="editor-section">
+                    <h4>📜 Lore</h4>
+                    <div class="editor-field">
+                        <label>Lore Lines (one per line)</label>
+                        <textarea id="itemLore" placeholder="&7A legendary weapon&#10;&7forged in ancient times" oninput="updateLorePreview()"></textarea>
+                        <div class="color-preview" id="itemLorePreview" style="flex-direction: column; align-items: flex-start; min-height: 60px;"></div>
+                    </div>
+                </div>
+
+                <div class="editor-section">
+                    <h4>✨ Enchantments</h4>
+                    <div class="enchant-list" id="enchantList"></div>
+                    <button class="btn btn-ghost btn-sm" onclick="addEnchantment()">+ Add Enchantment</button>
+                </div>
+
+                <div class="editor-section" id="potionSection" style="display: none;">
+                    <h4>🧪 Potion</h4>
+                    <div class="editor-field">
+                        <label>Potion Type</label>
+                        <select class="input" id="itemPotionType"></select>
+                    </div>
+                </div>
+
+                <div class="editor-section" id="fireworkSection" style="display: none;">
+                    <h4>🎆 Firework</h4>
+                    <div class="editor-field">
+                        <label>Flight Power (1-3)</label>
+                        <input type="number" class="input" id="itemFireworkPower" min="1" max="3" value="1">
+                    </div>
+                </div>
+
+                <div class="editor-section">
+                    <h4>⚙️ Options</h4>
+                    <div class="checkbox-group">
+                        <label class="checkbox"><input type="checkbox" id="itemUnbreakable"><span>Unbreakable</span></label>
+                        <label class="checkbox"><input type="checkbox" id="itemGlow"><span>Glow Effect</span></label>
+                    </div>
+                    <div class="editor-row" style="margin-top: 12px;">
+                        <div class="editor-field">
+                            <label>Custom Model Data</label>
+                            <input type="number" class="input" id="itemModelData" placeholder="Optional" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-section">
+                    <h4>🚩 Hide Flags</h4>
+                    <div class="checkbox-group">
+                        <label class="checkbox"><input type="checkbox" id="flagEnchants"><span>Enchants</span></label>
+                        <label class="checkbox"><input type="checkbox" id="flagAttributes"><span>Attributes</span></label>
+                        <label class="checkbox"><input type="checkbox" id="flagUnbreakable"><span>Unbreakable</span></label>
+                        <label class="checkbox"><input type="checkbox" id="flagDye"><span>Dye</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="deleteCurrentItem()">Delete</button>
+                <div style="flex: 1;"></div>
+                <button class="btn btn-ghost" onclick="hideModal('itemModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveItem()">Save Item</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let config = { 'menu-title': '&8Essentials', sections: {} };
+        let currentSection = null;
+        let currentItemIndex = null;
+        let currentCategory = 'all';
+        let searchFilter = '';
+        let sectionViewMode = 'grid'; // 'grid' or 'slots'
+
+        // Minecraft item texture URL - using a reliable CDN
+        const getItemTexture = (material) => {
+            const name = material.toLowerCase();
+            // Use multiple fallback sources
+            return `https://minecraft-api.vercel.app/images/items/${name}.png`;
+        };
+
+        const getItemTextureFallback = (material) => {
+            const name = material.toLowerCase();
+            return `https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.20.4/assets/minecraft/textures/item/${name}.png`;
+        };
+
+        // Emoji fallbacks for common items
+        const ITEM_EMOJIS = {
+            'DIAMOND_SWORD': '⚔️', 'NETHERITE_SWORD': '🗡️', 'IRON_SWORD': '🗡️', 'BOW': '🏹', 'CROSSBOW': '🏹', 'TRIDENT': '🔱',
+            'DIAMOND_HELMET': '⛑️', 'NETHERITE_HELMET': '⛑️', 'IRON_HELMET': '⛑️', 'SHIELD': '🛡️', 'ELYTRA': '🪽',
+            'DIAMOND_PICKAXE': '⛏️', 'NETHERITE_PICKAXE': '⛏️', 'IRON_PICKAXE': '⛏️', 'DIAMOND_AXE': '🪓', 'IRON_AXE': '🪓',
+            'COOKED_BEEF': '🥩', 'GOLDEN_APPLE': '🍎', 'BREAD': '🍞', 'APPLE': '🍎', 'CAKE': '🎂', 'COOKIE': '🍪',
+            'POTION': '🧪', 'SPLASH_POTION': '🧪', 'LINGERING_POTION': '🧪', 'EXPERIENCE_BOTTLE': '✨',
+            'DIAMOND': '💎', 'EMERALD': '💚', 'GOLD_INGOT': '🥇', 'IRON_INGOT': '🪙', 'NETHERITE_INGOT': '⬛',
+            'ARROW': '🏹', 'FIREWORK_ROCKET': '🎆', 'ENDER_PEARL': '🟣', 'SNOWBALL': '⚪', 'EGG': '🥚',
+            'TNT': '🧨', 'FIRE_CHARGE': '🔥', 'TOTEM_OF_UNDYING': '🗿', 'NETHER_STAR': '⭐',
+            'CHEST': '📦', 'ENDER_CHEST': '📦', 'BARREL': '🛢️', 'CRAFTING_TABLE': '🔨', 'FURNACE': '🔥',
+            'ENCHANTING_TABLE': '📖', 'BREWING_STAND': '⚗️', 'ANVIL': '🔨', 'BEACON': '💡',
+            'MACE': '🔨', 'WIND_CHARGE': '💨', 'TRIAL_KEY': '🗝️', 'OMINOUS_TRIAL_KEY': '🗝️',
+            'NAME_TAG': '🏷️', 'LEAD': '🪢', 'SADDLE': '🎠', 'BOOK': '📖', 'MAP': '🗺️',
+        };
+
+        const getItemEmoji = (material) => ITEM_EMOJIS[material] || '📦';
+
+        // Minecraft color code parser
+        function parseMinecraftColors(text) {
+            if (!text) return '';
+            let result = '';
+            let currentClasses = [];
+            let i = 0;
+            
+            while (i < text.length) {
+                if (text[i] === '&' && i + 1 < text.length) {
+                    const code = text[i + 1].toLowerCase();
+                    if ('0123456789abcdef'.includes(code)) {
+                        currentClasses = currentClasses.filter(c => !c.startsWith('mc-') || c === 'mc-l' || c === 'mc-o' || c === 'mc-n' || c === 'mc-m');
+                        currentClasses.push('mc-' + code);
+                    } else if ('lonmkr'.includes(code)) {
+                        if (code === 'r') {
+                            currentClasses = [];
+                        } else {
+                            currentClasses.push('mc-' + code);
+                        }
+                    }
+                    i += 2;
+                } else {
+                    const cls = currentClasses.length > 0 ? ` class="${currentClasses.join(' ')}"` : '';
+                    result += `<span${cls}>${escapeHtml(text[i])}</span>`;
+                    i++;
+                }
+            }
+            return result;
+        }
+
+        function updateMenuTitlePreview() {
+            const input = document.getElementById('menuTitle').value;
+            document.getElementById('menuTitlePreview').innerHTML = parseMinecraftColors(input);
+        }
+
+        function updateNamePreview() {
+            const input = document.getElementById('itemName').value;
+            document.getElementById('itemNamePreview').innerHTML = parseMinecraftColors(input);
+        }
+
+        function updateLorePreview() {
+            const input = document.getElementById('itemLore').value;
+            const lines = input.split('\n').map(line => `<div>${parseMinecraftColors(line) || '&nbsp;'}</div>`).join('');
+            document.getElementById('itemLorePreview').innerHTML = lines;
+        }
+
+        // Material Categories
+        const MATERIAL_CATEGORIES = {
+            weapons: ['NETHERITE_SWORD', 'DIAMOND_SWORD', 'IRON_SWORD', 'STONE_SWORD', 'WOODEN_SWORD', 'GOLDEN_SWORD', 'BOW', 'CROSSBOW', 'TRIDENT', 'MACE'],
+            armor: ['NETHERITE_HELMET', 'NETHERITE_CHESTPLATE', 'NETHERITE_LEGGINGS', 'NETHERITE_BOOTS', 'DIAMOND_HELMET', 'DIAMOND_CHESTPLATE', 'DIAMOND_LEGGINGS', 'DIAMOND_BOOTS', 'IRON_HELMET', 'IRON_CHESTPLATE', 'IRON_LEGGINGS', 'IRON_BOOTS', 'GOLDEN_HELMET', 'GOLDEN_CHESTPLATE', 'GOLDEN_LEGGINGS', 'GOLDEN_BOOTS', 'LEATHER_HELMET', 'LEATHER_CHESTPLATE', 'LEATHER_LEGGINGS', 'LEATHER_BOOTS', 'CHAINMAIL_HELMET', 'CHAINMAIL_CHESTPLATE', 'CHAINMAIL_LEGGINGS', 'CHAINMAIL_BOOTS', 'ELYTRA', 'SHIELD', 'TURTLE_HELMET', 'WOLF_ARMOR', 'DIAMOND_HORSE_ARMOR', 'GOLDEN_HORSE_ARMOR', 'IRON_HORSE_ARMOR', 'LEATHER_HORSE_ARMOR'],
+            tools: ['NETHERITE_PICKAXE', 'NETHERITE_AXE', 'NETHERITE_SHOVEL', 'NETHERITE_HOE', 'DIAMOND_PICKAXE', 'DIAMOND_AXE', 'DIAMOND_SHOVEL', 'DIAMOND_HOE', 'IRON_PICKAXE', 'IRON_AXE', 'IRON_SHOVEL', 'IRON_HOE', 'GOLDEN_PICKAXE', 'GOLDEN_AXE', 'GOLDEN_SHOVEL', 'GOLDEN_HOE', 'STONE_PICKAXE', 'STONE_AXE', 'STONE_SHOVEL', 'STONE_HOE', 'WOODEN_PICKAXE', 'WOODEN_AXE', 'WOODEN_SHOVEL', 'WOODEN_HOE', 'FISHING_ROD', 'FLINT_AND_STEEL', 'SHEARS', 'BRUSH', 'SPYGLASS', 'COMPASS', 'CLOCK'],
+            food: ['COOKED_BEEF', 'COOKED_PORKCHOP', 'COOKED_CHICKEN', 'COOKED_MUTTON', 'COOKED_SALMON', 'COOKED_COD', 'COOKED_RABBIT', 'BAKED_POTATO', 'GOLDEN_CARROT', 'GOLDEN_APPLE', 'ENCHANTED_GOLDEN_APPLE', 'BREAD', 'APPLE', 'MELON_SLICE', 'PUMPKIN_PIE', 'CAKE', 'COOKIE', 'HONEY_BOTTLE', 'SWEET_BERRIES', 'GLOW_BERRIES'],
+            potions: ['POTION', 'SPLASH_POTION', 'LINGERING_POTION', 'GLASS_BOTTLE', 'DRAGON_BREATH'],
+            combat: ['ARROW', 'SPECTRAL_ARROW', 'TIPPED_ARROW', 'FIREWORK_ROCKET', 'ENDER_PEARL', 'SNOWBALL', 'EGG', 'TOTEM_OF_UNDYING', 'END_CRYSTAL', 'TNT', 'RESPAWN_ANCHOR', 'EXPERIENCE_BOTTLE', 'WIND_CHARGE', 'FIRE_CHARGE'],
+            smithing: ['NETHERITE_UPGRADE_SMITHING_TEMPLATE', 'COAST_ARMOR_TRIM_SMITHING_TEMPLATE', 'DUNE_ARMOR_TRIM_SMITHING_TEMPLATE', 'EYE_ARMOR_TRIM_SMITHING_TEMPLATE', 'HOST_ARMOR_TRIM_SMITHING_TEMPLATE', 'RAISER_ARMOR_TRIM_SMITHING_TEMPLATE', 'RIB_ARMOR_TRIM_SMITHING_TEMPLATE', 'SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE', 'SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE', 'SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE', 'SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE', 'SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE', 'TIDE_ARMOR_TRIM_SMITHING_TEMPLATE', 'VEX_ARMOR_TRIM_SMITHING_TEMPLATE', 'WARD_ARMOR_TRIM_SMITHING_TEMPLATE', 'WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE', 'WILD_ARMOR_TRIM_SMITHING_TEMPLATE', 'FLOW_ARMOR_TRIM_SMITHING_TEMPLATE', 'BOLT_ARMOR_TRIM_SMITHING_TEMPLATE', 'SMITHING_TABLE'],
+            pottery: ['DECORATED_POT', 'BRICK', 'ANGLER_POTTERY_SHERD', 'ARCHER_POTTERY_SHERD', 'ARMS_UP_POTTERY_SHERD', 'BLADE_POTTERY_SHERD', 'BREWER_POTTERY_SHERD', 'BURN_POTTERY_SHERD', 'DANGER_POTTERY_SHERD', 'EXPLORER_POTTERY_SHERD', 'FRIEND_POTTERY_SHERD', 'HEART_POTTERY_SHERD', 'HEARTBREAK_POTTERY_SHERD', 'HOWL_POTTERY_SHERD', 'MINER_POTTERY_SHERD', 'MOURNER_POTTERY_SHERD', 'PLENTY_POTTERY_SHERD', 'PRIZE_POTTERY_SHERD', 'SHEAF_POTTERY_SHERD', 'SHELTER_POTTERY_SHERD', 'SKULL_POTTERY_SHERD', 'SNORT_POTTERY_SHERD', 'FLOW_POTTERY_SHERD', 'GUSTER_POTTERY_SHERD', 'SCRAPE_POTTERY_SHERD'],
+            banners: ['CREEPER_BANNER_PATTERN', 'FLOWER_BANNER_PATTERN', 'GLOBE_BANNER_PATTERN', 'MOJANG_BANNER_PATTERN', 'PIGLIN_BANNER_PATTERN', 'SKULL_BANNER_PATTERN', 'FLOW_BANNER_PATTERN', 'GUSTER_BANNER_PATTERN', 'WHITE_BANNER', 'BLACK_BANNER', 'RED_BANNER', 'BLUE_BANNER', 'GREEN_BANNER', 'YELLOW_BANNER'],
+            trial: ['MACE', 'WIND_CHARGE', 'BREEZE_ROD', 'HEAVY_CORE', 'TRIAL_KEY', 'OMINOUS_TRIAL_KEY', 'VAULT', 'TRIAL_SPAWNER', 'OMINOUS_BOTTLE', 'CRAFTER', 'ARMADILLO_SCUTE', 'WOLF_ARMOR', 'RESIN_CLUMP', 'RESIN_BLOCK', 'RESIN_BRICKS'],
+            copper: ['COPPER_INGOT', 'COPPER_BLOCK', 'RAW_COPPER', 'EXPOSED_COPPER', 'WEATHERED_COPPER', 'OXIDIZED_COPPER', 'COPPER_DOOR', 'COPPER_TRAPDOOR', 'COPPER_GRATE', 'COPPER_BULB', 'CHISELED_COPPER', 'LIGHTNING_ROD'],
+            blocks: ['OBSIDIAN', 'CRYING_OBSIDIAN', 'COBBLESTONE', 'STONE', 'DEEPSLATE', 'DIRT', 'GRASS_BLOCK', 'OAK_PLANKS', 'SPRUCE_PLANKS', 'BIRCH_PLANKS', 'OAK_LOG', 'GLASS', 'TINTED_GLASS', 'SAND', 'GRAVEL', 'BRICKS', 'COBWEB', 'END_STONE', 'NETHERRACK', 'NETHER_BRICKS', 'SOUL_SAND', 'BLACKSTONE', 'TUFF', 'TUFF_BRICKS'],
+            redstone: ['REDSTONE', 'REDSTONE_BLOCK', 'REDSTONE_TORCH', 'LEVER', 'STONE_BUTTON', 'REPEATER', 'COMPARATOR', 'OBSERVER', 'DROPPER', 'DISPENSER', 'HOPPER', 'PISTON', 'STICKY_PISTON', 'SLIME_BLOCK', 'NOTE_BLOCK', 'JUKEBOX', 'BELL', 'SCULK_SENSOR', 'CRAFTER'],
+            minerals: ['DIAMOND', 'EMERALD', 'NETHERITE_INGOT', 'GOLD_INGOT', 'IRON_INGOT', 'COPPER_INGOT', 'NETHERITE_SCRAP', 'RAW_IRON', 'RAW_GOLD', 'AMETHYST_SHARD', 'LAPIS_LAZULI', 'COAL', 'QUARTZ', 'NETHER_STAR', 'HEART_OF_THE_SEA', 'ECHO_SHARD'],
+            mobdrops: ['BLAZE_ROD', 'GHAST_TEAR', 'MAGMA_CREAM', 'SLIME_BALL', 'GUNPOWDER', 'PHANTOM_MEMBRANE', 'RABBIT_FOOT', 'LEATHER', 'FEATHER', 'STRING', 'BONE', 'INK_SAC', 'GLOW_INK_SAC', 'SHULKER_SHELL', 'SCUTE', 'ARMADILLO_SCUTE', 'BREEZE_ROD', 'WITHER_SKELETON_SKULL', 'SKELETON_SKULL', 'ZOMBIE_HEAD', 'CREEPER_HEAD', 'DRAGON_HEAD', 'PLAYER_HEAD', 'ENDER_PEARL', 'DRAGON_BREATH', 'TOTEM_OF_UNDYING'],
+            dyes: ['WHITE_DYE', 'ORANGE_DYE', 'MAGENTA_DYE', 'LIGHT_BLUE_DYE', 'YELLOW_DYE', 'LIME_DYE', 'PINK_DYE', 'GRAY_DYE', 'LIGHT_GRAY_DYE', 'CYAN_DYE', 'PURPLE_DYE', 'BLUE_DYE', 'BROWN_DYE', 'GREEN_DYE', 'RED_DYE', 'BLACK_DYE', 'INK_SAC', 'GLOW_INK_SAC', 'BONE_MEAL'],
+            music: ['JUKEBOX', 'NOTE_BLOCK', 'MUSIC_DISC_13', 'MUSIC_DISC_CAT', 'MUSIC_DISC_BLOCKS', 'MUSIC_DISC_CHIRP', 'MUSIC_DISC_FAR', 'MUSIC_DISC_PIGSTEP', 'MUSIC_DISC_CREATOR', 'MUSIC_DISC_PRECIPICE', 'GOAT_HORN'],
+            buckets: ['BUCKET', 'WATER_BUCKET', 'LAVA_BUCKET', 'MILK_BUCKET', 'POWDER_SNOW_BUCKET', 'AXOLOTL_BUCKET', 'COD_BUCKET', 'SALMON_BUCKET', 'TADPOLE_BUCKET'],
+            decoration: ['PAINTING', 'ITEM_FRAME', 'GLOW_ITEM_FRAME', 'ARMOR_STAND', 'LANTERN', 'SOUL_LANTERN', 'CANDLE', 'TORCH', 'SOUL_TORCH', 'END_ROD', 'CHAIN', 'CAMPFIRE', 'WHITE_BED', 'RED_BED'],
+            plants: ['OAK_SAPLING', 'SPRUCE_SAPLING', 'BAMBOO', 'CACTUS', 'DANDELION', 'POPPY', 'SUNFLOWER', 'WHEAT_SEEDS', 'MELON_SEEDS', 'PUMPKIN_SEEDS', 'TORCHFLOWER_SEEDS'],
+            spawneggs: ['ALLAY_SPAWN_EGG', 'ARMADILLO_SPAWN_EGG', 'AXOLOTL_SPAWN_EGG', 'BLAZE_SPAWN_EGG', 'BREEZE_SPAWN_EGG', 'CREEPER_SPAWN_EGG', 'ENDERMAN_SPAWN_EGG', 'GHAST_SPAWN_EGG', 'IRON_GOLEM_SPAWN_EGG', 'PHANTOM_SPAWN_EGG', 'PIGLIN_SPAWN_EGG', 'SKELETON_SPAWN_EGG', 'SLIME_SPAWN_EGG', 'VILLAGER_SPAWN_EGG', 'WARDEN_SPAWN_EGG', 'WITCH_SPAWN_EGG', 'WOLF_SPAWN_EGG', 'ZOMBIE_SPAWN_EGG'],
+            misc: ['NAME_TAG', 'LEAD', 'SADDLE', 'BOOK', 'ENCHANTED_BOOK', 'WRITTEN_BOOK', 'MAP', 'BUNDLE', 'CHEST', 'ENDER_CHEST', 'BARREL', 'SHULKER_BOX', 'CRAFTING_TABLE', 'FURNACE', 'ANVIL', 'ENCHANTING_TABLE', 'BREWING_STAND', 'BEACON', 'CONDUIT', 'LODESTONE', 'BED']
+        };
+
+        const CATEGORY_LABELS = {
+            all: ['📦', 'All Items'], weapons: ['⚔️', 'Weapons'], armor: ['🛡️', 'Armor'], tools: ['⛏️', 'Tools'],
+            combat: ['🏹', 'Combat'], food: ['🍖', 'Food'], potions: ['🧪', 'Potions'], smithing: ['⚒️', 'Smithing & Trims'],
+            pottery: ['🏺', 'Pottery'], banners: ['🚩', 'Banners'], trial: ['🗝️', 'Trial (1.21)'], copper: ['🥉', 'Copper'],
+            blocks: ['🧱', 'Blocks'], redstone: ['🔴', 'Redstone'], minerals: ['💎', 'Minerals'], mobdrops: ['💀', 'Mob Drops'],
+            dyes: ['🎨', 'Dyes'], music: ['💿', 'Music'], buckets: ['🪣', 'Buckets'], decoration: ['🖼️', 'Decoration'],
+            plants: ['🌱', 'Plants'], spawneggs: ['🥚', 'Spawn Eggs'], misc: ['📜', 'Misc']
+        };
+
+        const ALL_MATERIALS = [...new Set(Object.values(MATERIAL_CATEGORIES).flat())].sort();
+
+        const ENCHANTMENTS = ['SHARPNESS', 'SMITE', 'BANE_OF_ARTHROPODS', 'KNOCKBACK', 'FIRE_ASPECT', 'LOOTING', 'SWEEPING_EDGE', 'POWER', 'PUNCH', 'FLAME', 'INFINITY', 'MULTISHOT', 'PIERCING', 'QUICK_CHARGE', 'CHANNELING', 'IMPALING', 'LOYALTY', 'RIPTIDE', 'DENSITY', 'BREACH', 'WIND_BURST', 'PROTECTION', 'FIRE_PROTECTION', 'BLAST_PROTECTION', 'PROJECTILE_PROTECTION', 'THORNS', 'RESPIRATION', 'AQUA_AFFINITY', 'FEATHER_FALLING', 'DEPTH_STRIDER', 'FROST_WALKER', 'SOUL_SPEED', 'SWIFT_SNEAK', 'EFFICIENCY', 'SILK_TOUCH', 'FORTUNE', 'LUCK_OF_THE_SEA', 'LURE', 'UNBREAKING', 'MENDING', 'VANISHING_CURSE', 'BINDING_CURSE'].sort();
+
+        const POTION_TYPES = ['WATER', 'MUNDANE', 'THICK', 'AWKWARD', 'HEALING', 'STRONG_HEALING', 'HARMING', 'STRONG_HARMING', 'REGENERATION', 'STRONG_REGENERATION', 'LONG_REGENERATION', 'SWIFTNESS', 'STRONG_SWIFTNESS', 'LONG_SWIFTNESS', 'STRENGTH', 'STRONG_STRENGTH', 'LONG_STRENGTH', 'SLOWNESS', 'LONG_SLOWNESS', 'POISON', 'STRONG_POISON', 'LONG_POISON', 'INVISIBILITY', 'LONG_INVISIBILITY', 'FIRE_RESISTANCE', 'LONG_FIRE_RESISTANCE', 'NIGHT_VISION', 'LONG_NIGHT_VISION', 'WATER_BREATHING', 'LONG_WATER_BREATHING', 'LEAPING', 'STRONG_LEAPING', 'LONG_LEAPING', 'SLOW_FALLING', 'LONG_SLOW_FALLING', 'TURTLE_MASTER', 'WEAKNESS', 'LONG_WEAKNESS', 'LUCK'].sort();
+
+        // Create item icon HTML with fallback
+        function createItemIcon(material, size = 32) {
+            const emoji = getItemEmoji(material);
+            return `<img src="${getItemTexture(material)}" 
+                        style="width:${size}px;height:${size}px;image-rendering:pixelated;" 
+                        onerror="this.onerror=null; this.src='${getItemTextureFallback(material)}'; this.onerror=function(){this.style.display='none'; this.nextElementSibling.style.display='flex';}"
+                        alt="${material}">
+                    <span class="emoji" style="display:none;font-size:${size*0.6}px;">${emoji}</span>`;
+        }
+
+        // Initialize
+        function init() {
+            const materialSelect = document.getElementById('itemMaterial');
+            materialSelect.innerHTML = ALL_MATERIALS.map(m => `<option value="${m}">${m}</option>`).join('');
+            
+            const potionSelect = document.getElementById('itemPotionType');
+            potionSelect.innerHTML = POTION_TYPES.map(p => `<option value="${p}">${p}</option>`).join('');
+            
+            renderMaterialCategories();
+            loadConfig();
+            renderMaterials();
+            renderSlotGrid();
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.section-item').forEach(s => s.classList.remove('active'));
+            
+            const panel = document.getElementById('panel-' + panelId);
+            if (panel) panel.classList.add('active');
+            
+            const navItem = document.querySelector(`.nav-item[data-panel="${panelId}"]`);
+            if (navItem) navItem.classList.add('active');
+            
+            const titles = { home: 'Home', materials: 'Material Browser', slots: 'Menu Slots', colors: 'Color Codes' };
+            document.getElementById('topbarTitle').textContent = titles[panelId] || 'Home';
+            
+            if (panelId === 'slots') renderSlotGrid();
+        }
+
+        function showSectionEditor(sectionKey) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('.section-item').forEach(s => s.classList.remove('active'));
+            
+            document.getElementById('panel-section').classList.add('active');
+            document.querySelector(`.section-item[data-section="${sectionKey}"]`)?.classList.add('active');
+            
+            currentSection = sectionKey;
+            renderSectionEditor(sectionKey);
+            
+            const section = config.sections[sectionKey];
+            document.getElementById('topbarTitle').textContent = cleanText(section.name) || sectionKey;
+        }
+
+        function renderMaterialCategories() {
+            const container = document.getElementById('materialCategories');
+            container.innerHTML = Object.entries(CATEGORY_LABELS).map(([key, [icon, label]]) =>
+                `<div class="category-item${key === 'all' ? ' active' : ''}" onclick="selectCategory('${key}')" data-category="${key}">
+                    <span>${icon}</span> ${label}
+                </div>`
+            ).join('');
+        }
+
+        function renderSectionEditor(sectionKey) {
+            const section = config.sections[sectionKey];
+            const container = document.getElementById('sectionContent');
+            
+            container.innerHTML = `
+                <div class="section-config">
+                    <div class="section-config-header">
+                        <div class="section-config-title">Section Settings</div>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSection('${sectionKey}')">Delete Section</button>
+                    </div>
+                    <div class="section-config-grid">
+                        <div class="field-group">
+                            <label>Icon Material</label>
+                            <select class="input" onchange="updateSection('${sectionKey}', 'icon', this.value)">
+                                ${ALL_MATERIALS.map(m => `<option value="${m}" ${m === section.icon ? 'selected' : ''}>${m}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label>Display Name</label>
+                            <input type="text" class="input" value="${escapeHtml(section.name)}" 
+                                onchange="updateSection('${sectionKey}', 'name', this.value)"
+                                oninput="document.getElementById('sectionNamePreview').innerHTML = parseMinecraftColors(this.value)">
+                            <div class="color-preview" id="sectionNamePreview">${parseMinecraftColors(section.name)}</div>
+                        </div>
+                        <div class="field-group">
+                            <label>Menu Slot (0-53)</label>
+                            <input type="number" class="input" value="${section.slot}" min="0" max="53" onchange="updateSection('${sectionKey}', 'slot', parseInt(this.value))">
+                        </div>
+                        <div class="field-group">
+                            <label>Menu Title</label>
+                            <input type="text" class="input" value="${escapeHtml(section['menu-title'])}" onchange="updateSection('${sectionKey}', 'menu-title', this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Slot Visualizer -->
+                <div class="section-slot-visualizer">
+                    <h4>📦 Section Inventory Layout</h4>
+                    <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 12px;">
+                        Click a slot to place selected item, or drag items to reorder. Items without assigned slots will auto-fill.
+                    </p>
+                    <div class="section-slot-grid" id="sectionSlotGrid"></div>
+                    <div style="margin-top: 12px; display: flex; gap: 16px; font-size: 11px; color: var(--text-muted);">
+                        <span><span style="display:inline-block;width:12px;height:12px;background:#373737;border:1px solid #1f1f1f;border-radius:2px;vertical-align:middle;"></span> Empty</span>
+                        <span><span style="display:inline-block;width:12px;height:12px;background:rgba(139,92,246,0.25);border:1px solid var(--accent);border-radius:2px;vertical-align:middle;"></span> Has Item</span>
+                    </div>
+                </div>
+                
+                <div class="search-bar">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="itemSearch" placeholder="Search items in this section..." oninput="filterSectionItems()">
+                    <div class="view-toggle">
+                        <button class="${sectionViewMode === 'grid' ? 'active' : ''}" onclick="setSectionView('grid')">Grid</button>
+                        <button class="${sectionViewMode === 'slots' ? 'active' : ''}" onclick="setSectionView('slots')">Slots</button>
+                    </div>
+                </div>
+                
+                <div class="items-header">
+                    <h3>Items (${section.items.length})</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openItemEditor('${sectionKey}', -1)">+ Add Item</button>
+                </div>
+                
+                <div class="items-grid" id="itemsGrid">
+                    ${section.items.map((item, i) => renderItemCard(sectionKey, item, i)).join('')}
+                    <div class="add-item-card" onclick="openItemEditor('${sectionKey}', -1)">
+                        <span style="font-size: 20px;">+</span>
+                        <span>Add Item</span>
+                    </div>
+                </div>
+            `;
+
+            renderSectionSlotGrid(sectionKey);
+        }
+
+        function setSectionView(mode) {
+            sectionViewMode = mode;
+            if (currentSection) renderSectionEditor(currentSection);
+        }
+
+        function renderSectionSlotGrid(sectionKey) {
+            const section = config.sections[sectionKey];
+            const grid = document.getElementById('sectionSlotGrid');
+            if (!grid) return;
+
+            // Build slot map from items
+            const slotMap = {};
+            section.items.forEach((item, index) => {
+                const slot = item.slot !== undefined ? item.slot : index;
+                slotMap[slot] = { item, index };
+            });
+
+            // Render 54 slots
+            let html = '';
+            for (let i = 0; i < 54; i++) {
+                const occupied = slotMap[i];
+                const cls = occupied ? 'occupied' : '';
+                let content;
+                if (occupied) {
+                    content = `${createItemIcon(occupied.item.material, 28)}`;
+                    if (occupied.item.amount > 1) {
+                        content += `<span class="slot-amount">${occupied.item.amount}</span>`;
+                    }
+                } else {
+                    content = `<span class="section-slot-empty">${i}</span>`;
+                }
+                html += `<div class="section-slot ${cls}" onclick="onSectionSlotClick(${i})" title="Slot ${i}">${content}</div>`;
+            }
+            grid.innerHTML = html;
+        }
+
+        function onSectionSlotClick(slotNum) {
+            // Open item editor with this slot pre-selected
+            openItemEditor(currentSection, -1, slotNum);
+        }
+
+        function filterSectionItems() {
+            const search = document.getElementById('itemSearch')?.value.toLowerCase() || '';
+            document.querySelectorAll('.item-card[data-index]').forEach(card => {
+                const material = card.dataset.material?.toLowerCase() || '';
+                const name = card.dataset.name?.toLowerCase() || '';
+                const matches = material.includes(search) || name.includes(search);
+                card.classList.toggle('hidden', !matches);
+            });
+        }
+
+        function renderItemCard(sectionKey, item, index) {
+            const badges = [];
+            if (item.slot !== undefined) badges.push(`<span class="badge badge-slot">Slot ${item.slot}</span>`);
+            if (item.amount && item.amount > 1) badges.push(`<span class="badge badge-amount">x${item.amount}</span>`);
+            if (item.enchantments && item.enchantments.length > 0) badges.push(`<span class="badge badge-enchant">${item.enchantments.length}E</span>`);
+            if (item.potion) badges.push(`<span class="badge badge-potion">Pot</span>`);
+            if (item.name) badges.push(`<span class="badge badge-named">✎</span>`);
+            
+            const displayName = item.name ? cleanText(item.name) : formatMaterial(item.material);
+            
+            return `
+                <div class="item-card" draggable="true" data-section="${sectionKey}" data-index="${index}"
+                     data-material="${item.material}" data-name="${displayName}"
+                     ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
+                     ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
+                     onclick="openItemEditor('${sectionKey}', ${index})">
+                    <span class="drag-handle">⋮⋮</span>
+                    <div class="item-card-icon">
+                        ${createItemIcon(item.material, 32)}
+                    </div>
+                    <div class="item-card-info">
+                        <div class="item-card-name">${escapeHtml(displayName)}</div>
+                        <div class="item-card-material">${item.material}</div>
+                        ${badges.length > 0 ? `<div class="item-card-badges">${badges.join('')}</div>` : ''}
+                    </div>
+                    <div class="item-card-actions">
+                        <button class="btn btn-icon btn-danger btn-sm" onclick="event.stopPropagation(); quickDeleteItem('${sectionKey}', ${index})">🗑</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSectionsList() {
+            const container = document.getElementById('sectionsList');
+            const sections = Object.entries(config.sections);
+            
+            if (sections.length === 0) {
+                container.innerHTML = '<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">No sections yet</div>';
+                return;
+            }
+            
+            container.innerHTML = sections.map(([key, section]) => `
+                <div class="section-item" onclick="showSectionEditor('${key}')" data-section="${key}">
+                    <span class="section-item-icon">
+                        ${createItemIcon(section.icon, 18)}
+                    </span>
+                    <span class="section-item-name">${cleanText(section.name)}</span>
+                    <span class="nav-item-count">${section.items.length}</span>
+                </div>
+            `).join('');
+        }
+
+        // Main Menu Slot Visualizer
+        function renderSlotGrid() {
+            const grid = document.getElementById('slotGrid');
+            const assignments = document.getElementById('slotAssignments');
+            if (!grid) return;
+            
+            // Build slot occupancy map
+            const slotMap = {};
+            for (const [key, section] of Object.entries(config.sections)) {
+                slotMap[section.slot] = { key, section };
+            }
+            
+            // Render 54 slots (6 rows x 9 cols)
+            let html = '';
+            for (let i = 0; i < 54; i++) {
+                const occupied = slotMap[i];
+                const cls = occupied ? 'occupied' : '';
+                let content;
+                if (occupied) {
+                    content = createItemIcon(occupied.section.icon, 28);
+                } else {
+                    content = `<span class="slot-number">${i}</span>`;
+                }
+                html += `<div class="slot ${cls}" onclick="onSlotClick(${i})" title="${occupied ? occupied.key + ' (slot ' + i + ')' : 'Slot ' + i}">${content}</div>`;
+            }
+            grid.innerHTML = html;
+            
+            // Render assignments list
+            const sortedSections = Object.entries(config.sections).sort((a, b) => a[1].slot - b[1].slot);
+            assignments.innerHTML = sortedSections.map(([key, section]) => `
+                <div style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 8px;">
+                    <div style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;">
+                        ${createItemIcon(section.icon, 24)}
+                    </div>
+                    <span style="flex:1;">${cleanText(section.name)}</span>
+                    <span style="color: var(--text-muted);">Slot ${section.slot}</span>
+                    <button class="btn btn-ghost btn-sm" onclick="showSectionEditor('${key}')">Edit</button>
+                </div>
+            `).join('') || '<p style="color: var(--text-muted);">No sections created yet.</p>';
+        }
+
+        function onSlotClick(slotNum) {
+            if (currentSection && config.sections[currentSection]) {
+                config.sections[currentSection].slot = slotNum;
+                renderSlotGrid();
+                showToast(`Slot ${slotNum} assigned to ${currentSection}`, 'success');
+            } else {
+                showToast('Select a section first from the sidebar', 'error');
+            }
+        }
+
+        // Material Browser
+        function selectCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.category-item').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.category-item[data-category="${category}"]`)?.classList.add('active');
+            renderMaterials();
+        }
+
+        function filterMaterials() { renderMaterials(); }
+
+        function renderMaterials() {
+            const search = document.getElementById('materialSearch')?.value.toLowerCase() || '';
+            let materials = currentCategory === 'all' ? ALL_MATERIALS : (MATERIAL_CATEGORIES[currentCategory] || []);
+            
+            if (search) materials = materials.filter(m => m.toLowerCase().includes(search));
+            
+            const grid = document.getElementById('materialGrid');
+            grid.innerHTML = materials.map(m => `
+                <div class="material-item" onclick="addMaterialToSection('${m}')">
+                    <div class="material-item-icon">
+                        ${createItemIcon(m, 24)}
+                    </div>
+                    <span class="material-item-name">${m}</span>
+                </div>
+            `).join('');
+        }
+
+        function addMaterialToSection(material) {
+            if (!currentSection || !config.sections[currentSection]) {
+                showToast('Select a section first', 'error');
+                return;
+            }
+            
+            const item = { material, amount: 1 };
+            if (material.includes('POTION') || material.includes('TIPPED_ARROW')) item.potion = { type: 'STRONG_HEALING' };
+            if (material === 'FIREWORK_ROCKET') item.firework = { power: 3 };
+            
+            config.sections[currentSection].items.push(item);
+            renderSectionEditor(currentSection);
+            renderSectionsList();
+            showToast(`Added ${material}`, 'success');
+        }
+
+        // Item Editor
+        function openItemEditor(sectionKey, index, presetSlot = null) {
+            currentSection = sectionKey;
+            currentItemIndex = index;
+            
+            const item = index >= 0 ? config.sections[sectionKey].items[index] : { material: 'DIAMOND_SWORD', amount: 1 };
+            
+            document.getElementById('itemModalTitle').textContent = index >= 0 ? 'Edit Item' : 'Add Item';
+            document.getElementById('itemMaterial').value = item.material || 'DIAMOND_SWORD';
+            document.getElementById('itemAmount').value = item.amount || 1;
+            document.getElementById('itemSlot').value = presetSlot !== null ? presetSlot : (item.slot !== undefined ? item.slot : '');
+            document.getElementById('itemName').value = item.name || '';
+            document.getElementById('itemLore').value = (item.lore || []).join('\n');
+            document.getElementById('itemUnbreakable').checked = item.unbreakable || false;
+            document.getElementById('itemGlow').checked = item.glow || false;
+            document.getElementById('itemModelData').value = item['custom-model-data'] || '';
+            
+            document.getElementById('flagEnchants').checked = (item.flags || []).includes('HIDE_ENCHANTS');
+            document.getElementById('flagAttributes').checked = (item.flags || []).includes('HIDE_ATTRIBUTES');
+            document.getElementById('flagUnbreakable').checked = (item.flags || []).includes('HIDE_UNBREAKABLE');
+            document.getElementById('flagDye').checked = (item.flags || []).includes('HIDE_DYE');
+            
+            renderEnchantments(item.enchantments || []);
+            
+            if (item.potion) document.getElementById('itemPotionType').value = item.potion.type;
+            if (item.firework) document.getElementById('itemFireworkPower').value = item.firework.power;
+            
+            updateNamePreview();
+            updateLorePreview();
+            onMaterialChange();
+            showModal('itemModal');
+        }
+
+        function onMaterialChange() {
+            const material = document.getElementById('itemMaterial').value;
+            document.getElementById('potionSection').style.display = (material.includes('POTION') || material.includes('TIPPED_ARROW')) ? 'block' : 'none';
+            document.getElementById('fireworkSection').style.display = material === 'FIREWORK_ROCKET' ? 'block' : 'none';
+        }
+
+        function renderEnchantments(enchantments) {
+            document.getElementById('enchantList').innerHTML = enchantments.map((e, i) => `
+                <div class="enchant-item">
+                    <select class="input input-sm" style="flex: 1;">
+                        ${ENCHANTMENTS.map(en => `<option value="${en}" ${en === e.type ? 'selected' : ''}>${en}</option>`).join('')}
+                    </select>
+                    <input type="number" class="input input-sm" style="width: 70px;" value="${e.level}" min="1" max="255">
+                    <button class="btn btn-icon btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function addEnchantment() {
+            const div = document.createElement('div');
+            div.className = 'enchant-item';
+            div.innerHTML = `
+                <select class="input input-sm" style="flex: 1;">${ENCHANTMENTS.map(en => `<option value="${en}">${en}</option>`).join('')}</select>
+                <input type="number" class="input input-sm" style="width: 70px;" value="1" min="1" max="255">
+                <button class="btn btn-icon btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>
+            `;
+            document.getElementById('enchantList').appendChild(div);
+        }
+
+        function saveItem() {
+            const item = {
+                material: document.getElementById('itemMaterial').value,
+                amount: parseInt(document.getElementById('itemAmount').value) || 1
+            };
+
+            const slot = document.getElementById('itemSlot').value;
+            if (slot !== '' && !isNaN(parseInt(slot))) {
+                item.slot = parseInt(slot);
+            }
+            
+            const name = document.getElementById('itemName').value.trim();
+            if (name) item.name = name;
+            
+            const lore = document.getElementById('itemLore').value.trim();
+            if (lore) item.lore = lore.split('\n').filter(l => l.trim());
+            
+            const enchantItems = document.querySelectorAll('#enchantList .enchant-item');
+            if (enchantItems.length > 0) {
+                item.enchantments = [];
+                enchantItems.forEach(el => {
+                    item.enchantments.push({ type: el.querySelector('select').value, level: parseInt(el.querySelector('input').value) || 1 });
+                });
+            }
+            
+            if (document.getElementById('itemUnbreakable').checked) item.unbreakable = true;
+            if (document.getElementById('itemGlow').checked) item.glow = true;
+            
+            const modelData = parseInt(document.getElementById('itemModelData').value);
+            if (modelData > 0) item['custom-model-data'] = modelData;
+            
+            const flags = [];
+            if (document.getElementById('flagEnchants').checked) flags.push('HIDE_ENCHANTS');
+            if (document.getElementById('flagAttributes').checked) flags.push('HIDE_ATTRIBUTES');
+            if (document.getElementById('flagUnbreakable').checked) flags.push('HIDE_UNBREAKABLE');
+            if (document.getElementById('flagDye').checked) flags.push('HIDE_DYE');
+            if (flags.length > 0) item.flags = flags;
+            
+            if (item.material.includes('POTION') || item.material.includes('TIPPED_ARROW')) item.potion = { type: document.getElementById('itemPotionType').value };
+            if (item.material === 'FIREWORK_ROCKET') item.firework = { power: parseInt(document.getElementById('itemFireworkPower').value) || 1 };
+            
+            if (currentItemIndex >= 0) config.sections[currentSection].items[currentItemIndex] = item;
+            else config.sections[currentSection].items.push(item);
+            
+            hideModal('itemModal');
+            renderSectionEditor(currentSection);
+            renderSectionsList();
+            showToast('Item saved!', 'success');
+        }
+
+        function deleteCurrentItem() {
+            if (currentItemIndex >= 0 && confirm('Delete this item?')) {
+                config.sections[currentSection].items.splice(currentItemIndex, 1);
+                hideModal('itemModal');
+                renderSectionEditor(currentSection);
+                renderSectionsList();
+            }
+        }
+
+        function quickDeleteItem(sectionKey, index) {
+            config.sections[sectionKey].items.splice(index, 1);
+            renderSectionEditor(sectionKey);
+            renderSectionsList();
+        }
+
+        // Drag and Drop
+        let draggedItem = null, draggedSection = null, draggedIndex = null;
+
+        function handleDragStart(e) {
+            const card = e.target.closest('.item-card');
+            if (!card) return;
+            draggedItem = card;
+            draggedSection = card.dataset.section;
+            draggedIndex = parseInt(card.dataset.index);
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            const card = e.target.closest('.item-card');
+            if (card) card.classList.remove('dragging');
+            document.querySelectorAll('.item-card').forEach(c => c.classList.remove('drag-over'));
+            draggedItem = draggedSection = draggedIndex = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            const card = e.target.closest('.item-card');
+            if (card && card !== draggedItem && card.dataset.section === draggedSection) card.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            const card = e.target.closest('.item-card');
+            if (card) card.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetCard = e.target.closest('.item-card');
+            if (!targetCard || targetCard === draggedItem || targetCard.dataset.section !== draggedSection) return;
+            
+            const targetIndex = parseInt(targetCard.dataset.index);
+            const items = config.sections[draggedSection].items;
+            const [movedItem] = items.splice(draggedIndex, 1);
+            items.splice(targetIndex, 0, movedItem);
+            
+            renderSectionEditor(draggedSection);
+            showToast('Item moved!', 'success');
+        }
+
+        // Section management
+        function updateSection(key, prop, value) {
+            config.sections[key][prop] = value;
+            renderSectionsList();
+            if (prop === 'slot') renderSlotGrid();
+        }
+
+        function deleteSection(key) {
+            if (confirm(`Delete "${key}" section?`)) {
+                delete config.sections[key];
+                renderSectionsList();
+                renderSlotGrid();
+                showPanel('home');
+            }
+        }
+
+        function addSection() {
+            const key = document.getElementById('newSectionKey').value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+            if (!key) { showToast('Enter a valid name', 'error'); return; }
+            if (config.sections[key]) { showToast('Section exists', 'error'); return; }
+            config.sections[key] = { icon: 'CHEST', name: '&f&l' + key.charAt(0).toUpperCase() + key.slice(1), slot: 0, 'menu-title': '&8' + key.charAt(0).toUpperCase() + key.slice(1), items: [] };
+            hideModal('addSectionModal');
+            document.getElementById('newSectionKey').value = '';
+            renderSectionsList();
+            renderSlotGrid();
+            showSectionEditor(key);
+            showToast('Section added!', 'success');
+        }
+
+        // Config
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                config = await response.json();
+                document.getElementById('menuTitle').value = config['menu-title'] || '';
+                updateMenuTitlePreview();
+                renderSectionsList();
+                renderSlotGrid();
+            } catch (error) {
+                config = { 'menu-title': '&8Essentials', sections: {} };
+                renderSectionsList();
+            }
+        }
+
+        async function saveConfig() {
+            config['menu-title'] = document.getElementById('menuTitle').value;
+            try {
+                const response = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(config) });
+                showToast(response.ok ? 'Saved!' : 'Failed to save', response.ok ? 'success' : 'error');
+            } catch { showToast('Failed to save', 'error'); }
+        }
+
+        // File handling
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    config = parseYaml(e.target.result);
+                    document.getElementById('menuTitle').value = config['menu-title'] || '';
+                    updateMenuTitlePreview();
+                    renderSectionsList();
+                    renderSlotGrid();
+                    hideModal('uploadModal');
+                    showToast('File loaded!', 'success');
+                } catch { showToast('Failed to parse', 'error'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseYaml(content) {
+            const lines = content.split('\n');
+            const result = { 'menu-title': '', sections: {} };
+            let currentSection = null, currentItem = null;
+            let inItems = false, inPotion = false, inFirework = false, inEnchantments = false, inLore = false, inFlags = false;
+            
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('#') || trimmed === '') continue;
+                
+                if (trimmed.startsWith('menu-title:')) { result['menu-title'] = trimmed.split('menu-title:')[1].trim().replace(/^["']|["']$/g, ''); continue; }
+                
+                const sectionMatch = line.match(/^  ([a-z_]+):$/);
+                if (sectionMatch) { currentSection = sectionMatch[1]; result.sections[currentSection] = { icon: '', name: '', slot: 0, 'menu-title': '', items: [] }; inItems = false; continue; }
+                
+                if (currentSection && line.startsWith('    ') && !line.startsWith('      ')) {
+                    if (trimmed.startsWith('icon:')) result.sections[currentSection].icon = trimmed.split('icon:')[1].trim();
+                    else if (trimmed.startsWith('name:')) result.sections[currentSection].name = trimmed.split('name:')[1].trim().replace(/^["']|["']$/g, '');
+                    else if (trimmed.startsWith('slot:')) result.sections[currentSection].slot = parseInt(trimmed.split('slot:')[1].trim());
+                    else if (trimmed.startsWith('menu-title:')) result.sections[currentSection]['menu-title'] = trimmed.split('menu-title:')[1].trim().replace(/^["']|["']$/g, '');
+                    else if (trimmed === 'items:') inItems = true;
+                    continue;
+                }
+                
+                if (inItems && line.startsWith('      - ')) {
+                    currentItem = { material: '' };
+                    const itemLine = line.substring(8);
+                    if (itemLine.startsWith('material:')) currentItem.material = itemLine.split('material:')[1].trim();
+                    result.sections[currentSection].items.push(currentItem);
+                    inPotion = inFirework = inEnchantments = inLore = inFlags = false;
+                    continue;
+                }
+                
+                if (inItems && currentItem && line.startsWith('        ') && !line.startsWith('          ')) {
+                    if (trimmed.startsWith('amount:')) currentItem.amount = parseInt(trimmed.split('amount:')[1].trim());
+                    else if (trimmed.startsWith('slot:')) currentItem.slot = parseInt(trimmed.split('slot:')[1].trim());
+                    else if (trimmed.startsWith('name:')) currentItem.name = trimmed.split('name:')[1].trim().replace(/^["']|["']$/g, '');
+                    else if (trimmed.startsWith('unbreakable:')) currentItem.unbreakable = trimmed.includes('true');
+                    else if (trimmed.startsWith('glow:')) currentItem.glow = trimmed.includes('true');
+                    else if (trimmed.startsWith('custom-model-data:')) currentItem['custom-model-data'] = parseInt(trimmed.split(':')[1].trim());
+                    else if (trimmed === 'potion:') { currentItem.potion = { type: '' }; inPotion = true; inFirework = inEnchantments = inLore = inFlags = false; }
+                    else if (trimmed === 'firework:') { currentItem.firework = { power: 1 }; inFirework = true; inPotion = inEnchantments = inLore = inFlags = false; }
+                    else if (trimmed === 'enchantments:') { currentItem.enchantments = []; inEnchantments = true; inPotion = inFirework = inLore = inFlags = false; }
+                    else if (trimmed === 'lore:') { currentItem.lore = []; inLore = true; inPotion = inFirework = inEnchantments = inFlags = false; }
+                    else if (trimmed === 'flags:') { currentItem.flags = []; inFlags = true; inPotion = inFirework = inEnchantments = inLore = false; }
+                    continue;
+                }
+                
+                if (line.startsWith('          ')) {
+                    if (inPotion && currentItem.potion && trimmed.startsWith('type:')) currentItem.potion.type = trimmed.split('type:')[1].trim();
+                    else if (inFirework && currentItem.firework && trimmed.startsWith('power:')) currentItem.firework.power = parseInt(trimmed.split('power:')[1].trim());
+                    else if (inEnchantments && currentItem.enchantments && trimmed.startsWith('- ')) { const [t, l] = trimmed.substring(2).split(':'); currentItem.enchantments.push({ type: t.trim(), level: parseInt(l) || 1 }); }
+                    else if (inLore && currentItem.lore && trimmed.startsWith('- ')) currentItem.lore.push(trimmed.substring(2).replace(/^["']|["']$/g, ''));
+                    else if (inFlags && currentItem.flags && trimmed.startsWith('- ')) currentItem.flags.push(trimmed.substring(2));
+                }
+            }
+            return result;
+        }
+
+        function toYaml(data) {
+            let yaml = '# KitCore Essentials Configuration\n\nmenu-title: "' + data['menu-title'] + '"\n\nsections:\n';
+            for (const [key, section] of Object.entries(data.sections)) {
+                yaml += `  ${key}:\n    icon: ${section.icon}\n    name: "${section.name}"\n    slot: ${section.slot}\n    menu-title: "${section['menu-title']}"\n    items:\n`;
+                for (const item of section.items) {
+                    yaml += `      - material: ${item.material}\n`;
+                    if (item.amount > 1) yaml += `        amount: ${item.amount}\n`;
+                    if (item.slot !== undefined) yaml += `        slot: ${item.slot}\n`;
+                    if (item.name) yaml += `        name: "${item.name}"\n`;
+                    if (item.lore?.length) { yaml += '        lore:\n'; item.lore.forEach(l => yaml += `          - "${l}"\n`); }
+                    if (item.enchantments?.length) { yaml += '        enchantments:\n'; item.enchantments.forEach(e => yaml += `          - ${e.type}:${e.level}\n`); }
+                    if (item.unbreakable) yaml += '        unbreakable: true\n';
+                    if (item.glow) yaml += '        glow: true\n';
+                    if (item['custom-model-data']) yaml += `        custom-model-data: ${item['custom-model-data']}\n`;
+                    if (item.flags?.length) { yaml += '        flags:\n'; item.flags.forEach(f => yaml += `          - ${f}\n`); }
+                    if (item.potion) yaml += `        potion:\n          type: ${item.potion.type}\n`;
+                    if (item.firework) yaml += `        firework:\n          power: ${item.firework.power}\n`;
+                }
+                yaml += '\n';
+            }
+            return yaml;
+        }
+
+        function showSourceModal() {
+            config['menu-title'] = document.getElementById('menuTitle').value;
+            document.getElementById('sourceCode').textContent = toYaml(config);
+            showModal('sourceModal');
+        }
+
+        function copySource() {
+            navigator.clipboard.writeText(document.getElementById('sourceCode').textContent)
+                .then(() => showToast('Copied!', 'success')).catch(() => showToast('Failed', 'error'));
+        }
+
+        // Modal & Utils
+        function showModal(id) { document.getElementById(id).classList.add('active'); }
+        function hideModal(id) { document.getElementById(id).classList.remove('active'); }
+        function showToast(msg, type) { const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3000); }
+        function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text || ''; return d.innerHTML.replace(/"/g, '&quot;'); }
+        function cleanText(text) { return (text || '').replace(/&[0-9a-fk-or]/gi, '').replace(/^["']|["']$/g, ''); }
+        function formatMaterial(m) { return (m || '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
+
+        // Event listeners
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.active').forEach(m => m.classList.remove('active')); });
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', e => { if (e.target === b) b.classList.remove('active'); }));
+        document.getElementById('newSectionKey').addEventListener('keypress', e => { if (e.key === 'Enter') addSection(); });
+
+        init();
+    </script>
+</body>
+</html>

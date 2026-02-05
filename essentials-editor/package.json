@@ -1,0 +1,14 @@
+{
+  "name": "kitcore-essentials-editor",
+  "version": "1.0.0",
+  "description": "Visual editor for KitCore essentials.yml configuration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["minecraft", "kitcore", "yaml", "editor"],
+  "license": "MIT"
+}
